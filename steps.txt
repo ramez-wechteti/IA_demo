@@ -1,0 +1,4 @@
+1- install anaconda3
+2-install cuda driver NVIDIA
+3-pycharm 
+4-imprort yolov3.cfg and yolov3.weights & coco.names
