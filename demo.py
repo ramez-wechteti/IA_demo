@@ -10,7 +10,7 @@ with open("coco.names", "r") as f:
 layer_names = net.getUnconnectedOutLayersNames()
 
 # Load image
-image = cv2.imread("your_image.jpg")
+image = cv2.imread("france.jpg")
 
 # Check if the image was loaded successfully
 if image is None:
