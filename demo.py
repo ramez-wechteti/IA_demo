@@ -1,22 +1,19 @@
 import cv2
-import numpy as np
-import torch
+from yolov5.detect import detect
 
-# Load YOLOv5
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-
-# Load COCO class names
-classes = model.names
+# Read class names from coco.names file
+with open('coco.names', 'r') as file:
+    classes = [line.strip() for line in file.readlines()]
 
 # Read the image
-image_path = "image.jpg"
+image_path = "france.jpg"
 frame = cv2.imread(image_path)
 
 # Convert BGR to RGB
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-# Perform inference
-results = model(frame)
+# Perform inference using YOLOv5
+results = detect(source=frame, weights='yolov5s.pt', img_size=640, conf_thres=0.5, iou_thres=0.5)
 
 # Process results
 for detection in results.xyxy[0]:
@@ -34,10 +31,11 @@ for detection in results.xyxy[0]:
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
         cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-# Convert RGB to BGR for display
-frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+# Convert RGB to BGR for saving the image
+output_image = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-# Display the result
-cv2.imshow("Object Detection", frame)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+# Save the output image
+output_image_path = "output/output_image.jpg"
+cv2.imwrite(output_image_path, output_image)
+
+print(f"Output image saved to {output_image_path}")
