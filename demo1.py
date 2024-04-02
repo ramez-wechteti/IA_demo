@@ -52,4 +52,4 @@ def process_video(video_path, output_path):
     pbar.close()
 
 # Example usage
-process_video('input_video.mp4', 'output_video.mp4')
+process_video('input_video.mp4', '/output/output_video.mp4')
