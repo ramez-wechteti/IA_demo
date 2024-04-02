@@ -1,76 +1,55 @@
 import cv2
-import numpy as np
+import torch
+from pathlib import Path
+from tqdm import tqdm
 
+def process_video(video_path, output_path):
+    # Load YOLOv5
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+    names = model.module.names if hasattr(model, 'module') else model.names
 
-# Load YOLO
-net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
-classes = []
-with open("coco.names", "r") as f:
-    classes = [line.strip() for line in f.readlines()]
+    # Open video file
+    video_capture = cv2.VideoCapture(video_path)
+    if not video_capture.isOpened():
+        print("Error: Could not open video file.")
+        return
 
+    # Get video properties
+    frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = video_capture.get(cv2.CAP_PROP_FPS)
 
-layer_names = net.getUnconnectedOutLayersNames()
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
+    # Process each frame
+    pbar = tqdm(total=int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT)))
+    while video_capture.isOpened():
+        ret, frame = video_capture.read()
+        if not ret:
+            break
+        
+        # Perform object detection
+        results = model(frame)
 
-# Read the image
-image_path = "image.jpg"
-frame = cv2.imread(image_path)
+        # Draw bounding boxes and labels
+        for detection in results.xyxy[0]:
+            x1, y1, x2, y2, conf, class_id = map(int, detection)
+            label = names[class_id]
+            color = (0, 0, 255) if label == 'ball' else (0, 255, 0)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
+        # Write the frame
+        out.write(frame)
+        pbar.update(1)
 
-height, width, channels = frame.shape
+    # Release everything when done
+    video_capture.release()
+    out.release()
+    cv2.destroyAllWindows()
+    pbar.close()
 
-
-# Detecting objects
-blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
-net.setInput(blob)
-outs = net.forward(layer_names)
-
-
-# Post-process the detections
-class_ids = []
-confidences = []
-boxes = []
-for out in outs:
-    for detection in out:
-        scores = detection[5:]
-        class_id = np.argmax(scores)
-        confidence = scores[class_id]
-        if confidence > 0.5:
-            center_x = int(detection[0] * width)
-            center_y = int(detection[1] * height)
-            w = int(detection[2] * width)
-            h = int(detection[3] * height)
-
-
-            x = int(center_x - w / 2)
-            y = int(center_y - h / 2)
-
-
-            class_ids.append(class_id)
-            confidences.append(float(confidence))
-            boxes.append([x, y, w, h])
-
-
-# Apply non-maximum suppression to remove redundant overlapping boxes
-indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
-
-
-# Draw the bounding boxes on the frame
-for i in range(len(boxes)):
-    if i in indices:
-        x, y, w, h = boxes[i]
-        label = str(classes[class_ids[i]])
-        confidence = confidences[i]
-
-
-        color = (0, 255, 0)  # Default color (Green)
-        if label == "ball":
-            color = (0, 0, 255)  # Red for sports ball
-
-
-        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-        cv2.putText(frame, f"{label} {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
-
-# Save the result
-cv2.imwrite("output/result.jpg", frame)
+# Example usage
+process_video('input_video.mp4', 'output_video.mp4')
