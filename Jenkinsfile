@@ -38,22 +38,18 @@ pipeline {
         stage('Build docker image') {
             steps {
                 script {
-                    def directory = new File('resources')
-                    boolean created = directory.mkdirs()
 
-                    if (created) {
-                        println "Folder created successfully."
-
-                        sh 'cp /srv/samba/share/ resources'
-                        sh 'docker build -t ia_detection .'
-
-                        directory.deleteDir()
-                    } else {
-                        error "Failed to create folder."
+                    dir('resources') {
+                        sh 'pwd -P'
                     }
-
-
                     
+
+                    sh 'cp /srv/samba/share/ resources/'
+                    sh 'docker build -t ia_detection .'
+
+                    dir('resources') {
+                        deleteDir()
+                    }
                 }
             }
         }
