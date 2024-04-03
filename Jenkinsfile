@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('GIT') {
             steps {
-                git branch: 'main', credentialsId: 'git-ramez', url: 'https://github.com/mhaddad86/IA_Demo.git'
+                git branch: 'main', credentialsId: 'git-ramez', url: 'https://github.com/ramez-wechteti/IA_demo.git'
             }
         }
 
@@ -31,6 +31,37 @@ pipeline {
                     }
                     
                     sh "rsync -av --exclude='.gitattributes' --exclude='Jenkinsfile' * ${destinationFolder}/${env.GIT_HASH}_${currentDate}"
+                }
+            }
+        }
+        
+        stage('Build docker image') {
+            steps {
+                script {
+                    def directory = new File('resources')
+                    boolean created = directory.mkdirs()
+
+                    if (created) {
+                        println "Folder created successfully."
+
+                        sh 'cp /srv/samba/share/ resources'
+                        sh 'docker build -t ia_detection .'
+
+                        directory.deleteDir()
+                    } else {
+                        error "Failed to create folder."
+                    }
+
+
+                    
+                }
+            }
+        }
+        
+        stage('production') {
+            steps {
+                script {
+                    sh 'docker run -d -v /home/Bigda/fai_workspace/prod/python/output:/app/output ia_detection'
                 }
             }
         }
