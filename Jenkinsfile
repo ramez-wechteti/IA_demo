@@ -44,7 +44,7 @@ pipeline {
                     }
                     
 
-                    sh 'cp -r /srv/samba/share/ resources/'
+                    sh 'cp -r /srv/samba/share/* resources/'
                     sh 'docker build -t ia_detection .'
 
                     dir('resources') {
