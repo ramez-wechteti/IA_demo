@@ -4,7 +4,10 @@ FROM python:3.12.2-slim
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app
-COPY *.py *.jpg *.names *.txt *.weights *.cfg *.pt /app/ 
+#COPY *.py *.jpg *.names *.txt *.weights *.cfg *.pt /app/
+COPY *.py *.jpg *.names *.txt /app/
+COPY resources/images/ /app/
+COPY resources/videos/ /app/ 
 
 # Update the package repositories
 RUN apt-get update && apt-get install -y \
